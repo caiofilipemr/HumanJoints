@@ -1,8 +1,11 @@
 #include <GL/glut.h>
+#include <iostream>
 #include "header/Node.h"
+#include "header/RotationTransformation.h"
 
 #define ORTHO_SIZE 50
 #define JOINT_SIZE 2.f
+#define BONE_SIZE 5.f
 
 GLfloat xRotation;
 GLfloat yRotation;
@@ -11,7 +14,7 @@ GLfloat lightPosition[] = {-25.f, 0.f, 50.f, 1.f};
 
 Node *root;
 
-void drawHuman(Node *pNode);
+void drawHuman(Node *parent);
 
 void createRoot();
 
@@ -23,13 +26,15 @@ void createLeftArm(Node *root);
 
 void createRightArm(Node *root);
 
-void drawJoint(Coordinate coordinate);
+void drawJoint(Coordinate coordinate, bool selected);
 
 void createLegs(Node *root);
 
 void createLeftLeg(Node *root);
 
 void createRightLeg(Node *root);
+
+void drawBone(Coordinate cParent, Coordinate cChild, bool selected);
 
 void clearBuffers() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -50,16 +55,26 @@ void draw() {
     glutSwapBuffers();
 }
 
-void drawHuman(Node *root) {
-    for (auto node : root->getChildren()) {
+void drawHuman(Node *parent) {
+    for (auto node : parent->getChildren()) {
         drawHuman(node);
+        drawBone(parent->getCoordinate(), node->getCoordinate(), parent->isSelected() && node->isSelected());
     }
-    drawJoint(root->getCoordinate());
+    drawJoint(parent->getCoordinate(), parent->isSelected());
 }
 
-void drawJoint(Coordinate c) {
+void drawBone(Coordinate cParent, Coordinate cChild, bool) {
+    glLineWidth(BONE_SIZE);
+    glColor3f(0.2, 0.2, 0.2);
+    glBegin(GL_LINES);
+    glVertex3f(cParent.x, cParent.y, cParent.z);
+    glVertex3f(cChild.x, cChild.y, cChild.z);
+    glEnd();
+}
+
+void drawJoint(Coordinate c, bool selected) {
     glPushMatrix();
-    glColor3f(0.0, 1.0, 0.0);
+    selected ? glColor3f(0, 0, 1) : glColor3f(0.5, 0.5, 0.5);
     glTranslatef(c.x, c.y, c.z);
     glutSolidSphere(JOINT_SIZE, 40, 40);
     glPopMatrix();
@@ -85,6 +100,14 @@ void keyboardKeys(unsigned char key, int, int) {
 }
 
 void keyboardSpecialKeys(int key, int, int) {
+    Node *shoulder = root->getChildren()[0];
+    RotationTransformation rt(0, 0, 5);
+    try {
+        rt.transform(shoulder->getVectorPath(1));
+    } catch (const char * e) {
+        std::cerr << e;
+    }
+
     switch (key) {
 
     }
@@ -181,6 +204,7 @@ void init() {
     definePerspective();
     defineCallbacks();
     defineLightConfiguration();
+    glEnable(GL_DEPTH_TEST);
     createTree();
     glutMainLoop();
 }

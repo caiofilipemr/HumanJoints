@@ -3,7 +3,7 @@ project(CSG)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(SOURCE_FILES main.cpp src/Coordinate.cpp header/Coordinate.h src/Node.cpp header/Node.h)
+set(SOURCE_FILES main.cpp src/Coordinate.cpp header/Coordinate.h src/Node.cpp header/Node.h src/RotationTransformation.cpp header/RotationTransformation.h src/MatrixOperation.cpp header/MatrixOperation.h)
 add_executable(CSG ${SOURCE_FILES})
 
 find_package(OpenGL REQUIRED)
