@@ -1,10 +1,14 @@
 #include "../header/Coordinate.h"
 
-Coordinate::Coordinate() : x(0), y(0), z(0) {
+Coordinate::Coordinate() : x(0), y(0), z(0), w(1) {
 
 }
 
-Coordinate::Coordinate(float x, float y, float z) : x(x), y(y), z(z) {
+Coordinate::Coordinate(float x, float y, float z) : x(x), y(y), z(z), w(1) {
+
+}
+
+Coordinate::Coordinate(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {
 
 }
 
@@ -45,4 +49,8 @@ void Coordinate::copy(Coordinate transformedPoint) {
     x = transformedPoint.x;
     y = transformedPoint.y;
     z = transformedPoint.z;
+}
+
+Coordinate Coordinate::clone() {
+    return Coordinate(x, y, z);
 }

@@ -11,7 +11,19 @@ class Node {
 
     void getAllDescendent(Node *pNode, std::vector<Node *> &nodes);
 
-    void verifyCollision(float x, float y, Node *parent, Node *child);
+    bool hasCollision(float &x, float &y, Node *parent, Node *child);
+
+    std::vector<Coordinate> getCollisionArea(Coordinate p1, Coordinate p2);
+
+    Coordinate getPoint(Coordinate &p1, Coordinate &p2, float degree) const;
+
+    float smallerX(std::vector<Coordinate> area);
+
+    float biggerX(std::vector<Coordinate> area);
+
+    float smallerY(std::vector<Coordinate> area);
+
+    float biggerY(std::vector<Coordinate> vector);
 public:
 
     Node();
@@ -24,15 +36,17 @@ public:
 
     void appendChild(Node *node);
 
-    std::vector<Node*> getVectorPath(int indexOffirstChildToGo);
+    std::vector<Node*> getVectorPath();
+
+    std::vector<Node*> getVectorPath(int indexOfFirstChildToGo);
 
     bool isSelected();
 
-    void verifyCollision(float x, float y);
+    bool verifyCollision(float &x, float &y);
 
-    Coordinate normalizedPoint(Coordinate &coordinate, Coordinate &getCoordinate);
+    void deselectedAll();
 
-    float pointLength(Coordinate &coordinate, Coordinate &getCoordinate);
+    Node *getSelectedIfAny();
 };
 
 

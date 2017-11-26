@@ -3,30 +3,61 @@
 RotationTransformation::RotationTransformation(float x, float y, float z) : x(x), y(y), z(z) { }
 
 void RotationTransformation::transform(std::vector<Node *> nodes) {
-    rotateXIfGreaterThenZero(nodes);
-    rotateYIfGreaterThenZero(nodes);
-    rotateZIfGreaterThenZero(nodes);
+    rotateXIfDiffThenZero(nodes);
+    rotateYIfDiffThenZero(nodes);
+    rotateZIfDiffThenZero(nodes);
 }
 
-void RotationTransformation::rotateXIfGreaterThenZero(std::vector<Node *> nodes) {
-    if (x > 0) {
+std::vector<Coordinate> RotationTransformation::transform(std::vector<Coordinate> points) {
+    points = rotateXIfDiffThenZero(points);
+    points = rotateYIfDiffThenZero(points);
+    points = rotateZIfDiffThenZero(points);
+    return points;
+}
+
+void RotationTransformation::rotateXIfDiffThenZero(std::vector<Node *> nodes) {
+    if (x != 0) {
         Coordinate translation = nodes.front()->getCoordinate();
         MatrixOperation::multiplyColumnCoordinates(nodes, calculateXMatrix(x, translation));
     }
 }
 
-void RotationTransformation::rotateYIfGreaterThenZero(std::vector<Node *> nodes) {
-    if (y > 0) {
+std::vector<Coordinate> RotationTransformation::rotateXIfDiffThenZero(std::vector<Coordinate> points) {
+    if (x != 0) {
+        Coordinate translation = points.front();
+        points = MatrixOperation::multiplyColumnCoordinates(points, calculateXMatrix(x, translation));
+    }
+    return points;
+}
+
+void RotationTransformation::rotateYIfDiffThenZero(std::vector<Node *> nodes) {
+    if (y != 0) {
         Coordinate translation = nodes.front()->getCoordinate();
         MatrixOperation::multiplyColumnCoordinates(nodes, calculateYMatrix(y, translation));
     }
 }
 
-void RotationTransformation::rotateZIfGreaterThenZero(std::vector<Node *> nodes) {
-    if (z > 0) {
+std::vector<Coordinate> RotationTransformation::rotateYIfDiffThenZero(std::vector<Coordinate> points) {
+    if (y != 0) {
+        Coordinate translation = points.front();
+        points = MatrixOperation::multiplyColumnCoordinates(points, calculateYMatrix(y, translation));
+    }
+    return points;
+}
+
+void RotationTransformation::rotateZIfDiffThenZero(std::vector<Node *> nodes) {
+    if (z != 0) {
         Coordinate translation = nodes.front()->getCoordinate();
         MatrixOperation::multiplyColumnCoordinates(nodes, calculateZMatrix(z, translation));
     }
+}
+
+std::vector<Coordinate> RotationTransformation::rotateZIfDiffThenZero(std::vector<Coordinate> points) {
+    if (z != 0) {
+        Coordinate translation = points.front();
+        points = MatrixOperation::multiplyColumnCoordinates(points, calculateZMatrix(z, translation));
+    }
+    return points;
 }
 
 matrix RotationTransformation::calculateXMatrix(float angle, Coordinate translation) {

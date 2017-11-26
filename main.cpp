@@ -3,6 +3,8 @@
 #include "header/Node.h"
 #include "header/RotationTransformation.h"
 
+#define WIDTH 600
+#define HEIGHT 600
 #define ORTHO_SIZE 50
 #define JOINT_SIZE 2.f
 #define BONE_SIZE 5.f
@@ -35,6 +37,8 @@ void createLeftLeg(Node *root);
 void createRightLeg(Node *root);
 
 void drawBone(Coordinate cParent, Coordinate cChild, bool selected);
+
+Coordinate getWorldCoords(int x, int y);
 
 void clearBuffers() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -87,6 +91,53 @@ void definePerspective() {
 }
 
 void mouseClick(int button, int state, int x, int y) {
+    if (state == GLUT_DOWN) {
+        root->deselectedAll();
+
+        Coordinate worldCoords = getWorldCoords(x, y);
+        std::cerr << worldCoords.x << " - " << worldCoords.y << " - " << worldCoords.z << " - " << worldCoords.w
+                  << std::endl;
+
+        root->verifyCollision(worldCoords.x, worldCoords.y);
+        glutPostRedisplay();
+    }
+}
+
+/**
+ * http://antongerdelan.net/opengl/raycasting.html.
+ * @param x
+ * @param y
+ * @return
+ */
+Coordinate getWorldCoords(int x, int y) {
+    Coordinate rayNds;
+    rayNds.x = (2.0f * x) / WIDTH - 1.0f;
+    rayNds.y = 1.0f - (2.0f * y) / HEIGHT;
+    rayNds.z = 1.0f;
+
+    Coordinate rayClip = Coordinate(rayNds.x, rayNds.y, -1.f, 1.f);
+
+    GLfloat projectionMatrix[16], inverseProjectionMatrix[16];
+    glGetFloatv(GL_PROJECTION_MATRIX, projectionMatrix);
+
+    MatrixOperation::inverse4x4(projectionMatrix, inverseProjectionMatrix);
+    Coordinate rayEye = Coordinate::fromColumnArray(
+            MatrixOperation::multiply(MatrixOperation::convertGLFloatToMatrix(inverseProjectionMatrix, 4, 4),
+                                      rayClip.toColumnArray()));
+
+    rayEye.z = -1.f;
+    rayEye.w = 0.f;
+
+    GLfloat modelViewMatrix[16], inverseModelViewMatrix[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, modelViewMatrix);
+
+    MatrixOperation::inverse4x4(modelViewMatrix, inverseModelViewMatrix);
+    Coordinate rayWor = Coordinate::fromColumnArray(
+            MatrixOperation::multiply(MatrixOperation::convertGLFloatToMatrix(inverseModelViewMatrix, 4, 4),
+                                      rayEye.toColumnArray()));
+
+    //float h = sqrtf(powf(rayWor.x, 2) + powf(rayWor.y, 2) + powf(rayWor.z, 2));
+    return rayWor;
 }
 
 void mouseMove(int x, int y) {
@@ -100,16 +151,36 @@ void keyboardKeys(unsigned char key, int, int) {
 }
 
 void keyboardSpecialKeys(int key, int, int) {
-    Node *shoulder = root->getChildren()[0];
-    RotationTransformation rt(0, 0, 5);
-    try {
-        rt.transform(shoulder->getVectorPath(1));
-    } catch (const char * e) {
-        std::cerr << e;
-    }
-
-    switch (key) {
-
+    Node *selected = root->getSelectedIfAny();
+    if (selected) {
+        switch (key) {
+            case GLUT_KEY_LEFT:
+            {
+                RotationTransformation rt(0, -1, 0);
+                rt.transform(selected->getVectorPath());
+            }
+                break;
+            case GLUT_KEY_RIGHT:
+            {
+                RotationTransformation rt(0, 1, 0);
+                rt.transform(selected->getVectorPath());
+            }
+                break;
+            case GLUT_KEY_UP:
+            {
+                RotationTransformation rt(0, 0, -1);
+                rt.transform(selected->getVectorPath());
+            }
+                break;
+            case GLUT_KEY_DOWN:
+            {
+                RotationTransformation rt(0, 0, 1);
+                rt.transform(selected->getVectorPath());
+            }
+                break;
+            default:
+                break;
+        }
     }
     glutPostRedisplay();
 }
@@ -123,7 +194,7 @@ void defineCallbacks() {
 }
 
 void defineWindowConfiguration() {
-    glutInitWindowSize(600, 600);
+    glutInitWindowSize(WIDTH, HEIGHT);
     glutInitDisplayMode(GLUT_STENCIL | GLUT_DEPTH | GLUT_DOUBLE);
     glutCreateWindow("CSG OpenGL");
     glClearColor(1, 1, 1, 0);
@@ -148,13 +219,13 @@ void createTree() {
 
 void createRoot() {
     root = new Node(Coordinate(0, 0, 0));
-    root->appendChild(new Node(Coordinate(0, 10*JOINT_SIZE, 0)));
-    root->appendChild(new Node(Coordinate(-3*JOINT_SIZE, -2*JOINT_SIZE, 0)));
-    root->appendChild(new Node(Coordinate(3*JOINT_SIZE, -2*JOINT_SIZE, 0)));
+    root->appendChild(new Node(Coordinate(0, 10 * JOINT_SIZE, 0)));
+    root->appendChild(new Node(Coordinate(-3 * JOINT_SIZE, -2 * JOINT_SIZE, 0)));
+    root->appendChild(new Node(Coordinate(3 * JOINT_SIZE, -2 * JOINT_SIZE, 0)));
 }
 
 void createHead(Node *root) {
-    root->appendChild(new Node(Coordinate(0, 15*JOINT_SIZE, 0)));
+    root->appendChild(new Node(Coordinate(0, 15 * JOINT_SIZE, 0)));
 }
 
 void createArms(Node *root) {
@@ -163,15 +234,15 @@ void createArms(Node *root) {
 }
 
 void createLeftArm(Node *root) {
-    Node *hand = new Node(Coordinate(-10*JOINT_SIZE, 10*JOINT_SIZE, 0));
-    Node *elbow = new Node(Coordinate(-5*JOINT_SIZE, 10*JOINT_SIZE, 0));
+    Node *hand = new Node(Coordinate(-10 * JOINT_SIZE, 10 * JOINT_SIZE, 0));
+    Node *elbow = new Node(Coordinate(-5 * JOINT_SIZE, 10 * JOINT_SIZE, 0));
     elbow->appendChild(hand);
     root->appendChild(elbow);
 }
 
 void createRightArm(Node *root) {
-    Node *hand = new Node(Coordinate(10*JOINT_SIZE, 10*JOINT_SIZE, 0));
-    Node *elbow = new Node(Coordinate(5*JOINT_SIZE, 10*JOINT_SIZE, 0));
+    Node *hand = new Node(Coordinate(10 * JOINT_SIZE, 10 * JOINT_SIZE, 0));
+    Node *elbow = new Node(Coordinate(5 * JOINT_SIZE, 10 * JOINT_SIZE, 0));
     elbow->appendChild(hand);
     root->appendChild(elbow);
 }
@@ -182,18 +253,18 @@ void createLegs(Node *root) {
 }
 
 void createLeftLeg(Node *root) {
-    Node *finger = new Node(Coordinate(-5*JOINT_SIZE, -14*JOINT_SIZE, -2*JOINT_SIZE));
-    Node *ankle = new Node(Coordinate(-3*JOINT_SIZE, -12*JOINT_SIZE, 0*JOINT_SIZE));
-    Node *knee = new Node(Coordinate(-3*JOINT_SIZE, -7*JOINT_SIZE, 0*JOINT_SIZE));
+    Node *finger = new Node(Coordinate(-5 * JOINT_SIZE, -14 * JOINT_SIZE, 2 * JOINT_SIZE));
+    Node *ankle = new Node(Coordinate(-3 * JOINT_SIZE, -12 * JOINT_SIZE, 0 * JOINT_SIZE));
+    Node *knee = new Node(Coordinate(-3 * JOINT_SIZE, -7 * JOINT_SIZE, 0 * JOINT_SIZE));
     ankle->appendChild(finger);
     knee->appendChild(ankle);
     root->appendChild(knee);
 }
 
 void createRightLeg(Node *root) {
-    Node *finger = new Node(Coordinate(1*JOINT_SIZE, -14*JOINT_SIZE, -2*JOINT_SIZE));
-    Node *ankle = new Node(Coordinate(3*JOINT_SIZE, -12*JOINT_SIZE, 0*JOINT_SIZE));
-    Node *knee = new Node(Coordinate(3*JOINT_SIZE, -7*JOINT_SIZE, 0*JOINT_SIZE));
+    Node *finger = new Node(Coordinate(1 * JOINT_SIZE, -14 * JOINT_SIZE, 2 * JOINT_SIZE));
+    Node *ankle = new Node(Coordinate(3 * JOINT_SIZE, -12 * JOINT_SIZE, 0 * JOINT_SIZE));
+    Node *knee = new Node(Coordinate(3 * JOINT_SIZE, -7 * JOINT_SIZE, 0 * JOINT_SIZE));
     ankle->appendChild(finger);
     knee->appendChild(ankle);
     root->appendChild(knee);

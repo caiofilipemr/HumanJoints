@@ -5,11 +5,13 @@
 
 class Coordinate {
 public:
-    float x, y, z;
+    float x, y, z, w;
 
     Coordinate();
 
     Coordinate(float x, float y, float z);
+
+    Coordinate(float x, float y, float z, float w);
 
     Coordinate add(Coordinate point);
 
@@ -26,6 +28,8 @@ public:
     static Coordinate fromRowArray(std::vector<std::vector<float>> point);
 
     void copy(Coordinate transformedPoint);
+
+    Coordinate clone();
 };
 
 
